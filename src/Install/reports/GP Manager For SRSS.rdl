@@ -2,12 +2,21 @@
 <Report MustUnderstand="df" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
   <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
   <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="GPManager">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=localhost;Initial Catalog=DEVELOPMENT</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+    </DataSource>
+  </DataSources>
   <DataSets>
     <DataSet Name="DatasetActivos">
-      <SharedDataSet>
-        <SharedDataSetReference>/Reportes/Development/DataSets Dashboard GP-Manager/DatasetActivos</SharedDataSetReference>
-        <rd:ReportServerUrl>https://reportes.ntdingredientes.com/ReportServer</rd:ReportServerUrl>
-      </SharedDataSet>
+      <Query>
+        <DataSourceName>GPManager</DataSourceName>
+        <CommandText>SELECT name, department_id, Disponible, Limite FROM dbo.vw_gpManagerDepartmentUsage WHERE enabled=1 ORDER BY name</CommandText>
+      </Query>
       <Fields>
         <Field Name="name">
           <DataField>name</DataField>
@@ -28,10 +37,10 @@
       </Fields>
     </DataSet>
     <DataSet Name="DatasetLoginUser">
-      <SharedDataSet>
-        <SharedDataSetReference>/Reportes/Development/DataSets Dashboard GP-Manager/DatasetLoginUser</SharedDataSetReference>
-        <rd:ReportServerUrl>https://reportes.ntdingredientes.com/ReportServer</rd:ReportServerUrl>
-      </SharedDataSet>
+      <Query>
+        <DataSourceName>GPManager</DataSourceName>
+        <CommandText>SELECT department_id, COALESCE(departamento, N'Sin asignar') AS departamento, usuario, company, logInDate, logInTime, activity FROM dbo.vw_gpManagerSessions ORDER BY logInDate DESC, logInTime DESC</CommandText>
+      </Query>
       <Fields>
         <Field Name="department_id">
           <DataField>department_id</DataField>
@@ -64,10 +73,10 @@
       </Fields>
     </DataSet>
     <DataSet Name="DataSetTotalUser">
-      <SharedDataSet>
-        <SharedDataSetReference>/Reportes/Development/DataSets Dashboard GP-Manager/DatasetTotalUser</SharedDataSetReference>
-        <rd:ReportServerUrl>https://reportes.ntdingredientes.com/ReportServer</rd:ReportServerUrl>
-      </SharedDataSet>
+      <Query>
+        <DataSourceName>GPManager</DataSourceName>
+        <CommandText>SELECT COUNT(*) AS TOTAL FROM dbo.vw_gpManagerSessions</CommandText>
+      </Query>
       <Fields>
         <Field Name="TOTAL">
           <DataField>TOTAL</DataField>
@@ -76,10 +85,10 @@
       </Fields>
     </DataSet>
     <DataSet Name="DataSetDepart">
-      <SharedDataSet>
-        <SharedDataSetReference>/Reportes/Development/DataSets Dashboard GP-Manager/DatasetDepart</SharedDataSetReference>
-        <rd:ReportServerUrl>https://reportes.ntdingredientes.com/ReportServer</rd:ReportServerUrl>
-      </SharedDataSet>
+      <Query>
+        <DataSourceName>GPManager</DataSourceName>
+        <CommandText>SELECT name AS departamento, department_id FROM dbo.vw_gpManagerDepartmentUsage WHERE enabled=1 ORDER BY name</CommandText>
+      </Query>
       <Fields>
         <Field Name="departamento">
           <DataField>departamento</DataField>
@@ -678,7 +687,7 @@
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>TRANSACCION</Value>
+                                  <Value>ACTIVIDAD REGISTRADA</Value>
                                   <Style>
                                     <FontFamily>Calibri</FontFamily>
                                     <FontSize>11pt</FontSize>
@@ -1127,7 +1136,7 @@
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Fields!Disponible.Value</Value>
+                                  <Value>=(Fields!Limite.Value-Fields!Disponible.Value)</Value>
                                   <Style>
                                     <FontFamily>Calibri</FontFamily>
                                     <FontWeight>Normal</FontWeight>
@@ -1197,7 +1206,7 @@
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=(Fields!Limite.Value-Fields!Disponible.Value)</Value>
+                                  <Value>=Fields!Disponible.Value</Value>
                                   <Style>
                                     <FontFamily>Calibri</FontFamily>
                                     <FontWeight>Normal</FontWeight>
@@ -1282,7 +1291,7 @@
                       </ChartDataPointValues>
                       <ChartDataLabel>
                         <Style />
-                        <Label>=((Sum(Fields!TOTAL.Value, "DataSetTotalUser")-Sum(Fields!Disponible.Value, "DatasetActivos"))*100\Sum(Fields!TOTAL.Value, "DataSetTotalUser"))</Label>
+                        <Label>=CStr(Sum(Fields!Disponible.Value, "DatasetActivos")) &amp; " cupos netos disponibles"</Label>
                       </ChartDataLabel>
                       <Style>
                         <Color>#3aa6d6</Color>
@@ -1628,6 +1637,5 @@
     </GridLayoutDefinition>
   </ReportParametersLayout>
   <rd:ReportUnitType>Inch</rd:ReportUnitType>
-  <rd:ReportServerUrl>http://reportes.ntdingredientes.com/ReportServer</rd:ReportServerUrl>
   <rd:ReportID>7c65856f-ca3d-4563-aabd-140fc923e5c3</rd:ReportID>
 </Report>
