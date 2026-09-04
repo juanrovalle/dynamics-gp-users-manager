@@ -11,10 +11,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
     -- Do not commit/roll back a caller's transaction, or lose audit on its rollback.
-    -- RAISERROR intentionally does not honor XACT_ABORT in the caller.
+    -- Keep this informational so transaction state does not depend on the
+    -- caller's error-handling settings. The return code is the stable contract
+    -- for refusing an unsupported nested call.
     IF @@TRANCOUNT <> 0
     BEGIN
-        RAISERROR('Call this procedure outside a transaction.', 16, 1);
+        RAISERROR('Call this procedure outside a transaction.', 10, 1);
         RETURN 1;
     END;
     SET XACT_ABORT ON;

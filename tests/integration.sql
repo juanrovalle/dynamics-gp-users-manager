@@ -117,13 +117,9 @@ PRINT 'PASS constraints';
 SET @failed=0;
 SET XACT_ABORT ON;
 BEGIN TRANSACTION;
-BEGIN TRY
-    EXEC dbo.SP_LOGOUTGPUSER_TRAN N'alice';
-END TRY BEGIN CATCH
-    IF ERROR_NUMBER()<>50000 THROW;
-    SET @failed=1;
-END CATCH;
-IF @failed=0 OR @@TRANCOUNT<>1 OR XACT_STATE()<>1
+SET @rc=NULL;
+EXEC @rc=dbo.SP_LOGOUTGPUSER_TRAN N'alice';
+IF @rc<>1 OR @@TRANCOUNT<>1 OR XACT_STATE()<>1
     THROW 52029, 'Caller transaction was not preserved.', 1;
 ROLLBACK;
 PRINT 'PASS caller transaction preservation';

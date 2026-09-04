@@ -10,7 +10,7 @@ jobs:
           ACCEPT_EULA: Y
           MSSQL_SA_PASSWORD: GPManager_CI_Only_2026!
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Static validation
         shell: pwsh
         run: ./tests/Validate.ps1

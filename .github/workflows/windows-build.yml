@@ -7,8 +7,8 @@ jobs:
         os: [windows-2022, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
       - name: Static validation and unit tests
@@ -23,7 +23,7 @@ jobs:
           ./packaging/Generate-Icon.ps1
           dotnet publish src/DynamicsGP.UserOps.Desktop -c Release -r win-x64 --self-contained true -p:PublishTrimmed=false -o artifacts/publish
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: DynamicsGPUserOps-4.0.0-win-x64-${{ matrix.os }}
           path: artifacts/publish
