@@ -15,14 +15,15 @@ jobs:
         shell: pwsh
         run: |
           ./tests/Validate.ps1
-          dotnet run --project tests/GPManager.Tests -c Release
+          dotnet run --project tests/DynamicsGP.UserOps.Tests -c Release
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Self-contained Windows publish
         shell: pwsh
         run: |
-          dotnet publish src/GPManager.Desktop -c Release -r win-x64 --self-contained true -p:PublishTrimmed=false -o artifacts/publish
+          ./packaging/Generate-Icon.ps1
+          dotnet publish src/DynamicsGP.UserOps.Desktop -c Release -r win-x64 --self-contained true -p:PublishTrimmed=false -o artifacts/publish
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
-          name: GPUsersManager-win-x64-${{ matrix.os }}
+          name: DynamicsGPUserOps-4.0.0-win-x64-${{ matrix.os }}
           path: artifacts/publish

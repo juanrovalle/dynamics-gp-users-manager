@@ -3,7 +3,7 @@ USE GPManagerTest;
 SET NOCOUNT ON;
 IF DB_NAME()<>N'GPManagerTest' THROW 52001, 'Wrong test database.', 1;
 IF (SELECT COUNT(*) FROM dbo.gpManagerUser)<>3 THROW 52002, 'Upgrade did not preserve users.', 1;
-IF (SELECT COUNT(*) FROM dbo.gpManagerSchemaVersion WHERE version=3)<>1 THROW 52003, 'Migration is not idempotent.', 1;
+IF (SELECT COUNT(*) FROM dbo.gpManagerSchemaVersion WHERE version=4)<>1 THROW 52003, 'Schema-v4 migration is not idempotent.', 1;
 IF NOT EXISTS(SELECT 1 FROM dbo.vw_gpManagerDepartmentUsage WHERE department_id=3 AND Activos=0 AND Disponible=2)
     THROW 52004, 'Empty departments missing or incorrectly counted.', 1;
 IF NOT EXISTS(SELECT 1 FROM dbo.vw_gpManagerDepartmentUsage WHERE department_id=1 AND Activos=2 AND Disponible=-1 AND Exceso=1)

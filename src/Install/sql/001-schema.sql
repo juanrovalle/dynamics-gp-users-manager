@@ -4,7 +4,7 @@ IF OBJECT_ID(N'dbo.gpManagerSchemaVersion', N'U') IS NULL
         version int NOT NULL PRIMARY KEY,
         installed_at datetime2(3) NOT NULL DEFAULT SYSUTCDATETIME()
     );
-IF EXISTS (SELECT 1 FROM dbo.gpManagerSchemaVersion WHERE version > 3)
+IF EXISTS (SELECT 1 FROM dbo.gpManagerSchemaVersion WHERE version > 4)
     THROW 51002, 'Database is newer than this installer. Downgrade refused.', 1;
 IF OBJECT_ID(N'dbo.gpManagerDepartment', N'U') IS NULL
     CREATE TABLE dbo.gpManagerDepartment (

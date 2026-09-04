@@ -1,6 +1,8 @@
-# Windows Server installation — 3.0.1
+# Dynamics GP UserOps — Windows Server installation (4.0.0)
 
-The same Setup.exe is prepared for Windows 11 x64 and Windows Server 2016, 2019, 2022 and 2025 x64 **with Desktop Experience**. The SQL schema remains version 3.
+Offline HTML editions of this guide are available in [English](windows-server.en.html) and [Español](windows-server.es.html), with a [language selector](index.html). Both editions are included in Setup and linked from the Start menu.
+
+The same Setup.exe is prepared for Windows 11 x64 and Windows Server 2016, 2019, 2022 and 2025 x64 **with Desktop Experience**. Version 4.0.0 uses SQL schema 4.
 
 This describes the package's installation targets, not completed certification on those servers. Run and record acceptance tests on the customer's exact Windows, SQL Server and GP build.
 
@@ -34,8 +36,8 @@ Prepare the account responsibilities from the main guide: Windows installer elev
 1. Copy Setup.exe and compare its SHA-256 with the provided checksum.
 2. Sign in locally or through an authorized RDP desktop session.
 3. Run Setup as a Windows administrator, review the license and install.
-4. Open GP Users Manager from the Start menu.
-5. Follow the six-step SQL installation wizard in [the main guide](installation-and-testing.html).
+4. Open Dynamics GP UserOps from the Start menu.
+5. Follow the six-step SQL installation wizard in [the main guide](installation-and-testing.en.html).
 
 The package includes the .NET Desktop Runtime. No SDK, sqlcmd, ASP.NET Hosting Bundle or IIS is needed. Installation makes no Internet downloads.
 
@@ -43,12 +45,12 @@ Optional unattended **file installation**, from elevated PowerShell:
 
 ```powershell
 # Work in the folder containing Setup.exe.
-New-Item -ItemType Directory -Path 'C:\Temp\GPUM' -Force | Out-Null
+New-Item -ItemType Directory -Path 'C:\Temp\UserOps' -Force | Out-Null
 $setupProcess = Start-Process -FilePath '.\Setup.exe' `
-    -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/LOG="C:\Temp\GPUM\setup.log"' `
+    -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/LOG="C:\Temp\UserOps\setup.log"' `
     -WindowStyle Hidden -Wait -PassThru
 if ($setupProcess.ExitCode -ne 0) {
-    throw "Setup failed or requires attention; exit code $($setupProcess.ExitCode). Inspect C:\Temp\GPUM\setup.log."
+    throw "Setup failed or requires attention; exit code $($setupProcess.ExitCode). Inspect C:\Temp\UserOps\setup.log."
 }
 ```
 
@@ -85,7 +87,9 @@ The product does not add a Windows service or a Windows Task Scheduler task. SQL
 
 ## 6. Upgrade or uninstall
 
-Install 3.0.1 over 3.0.0 using the same directory. The AppId is unchanged. There is no new SQL schema migration in 3.0.1; existing v3 databases, jobs and policies do not need reconfiguration merely for this platform update.
+To upgrade from GP Users Manager 3.x, close the old console and run Dynamics GP UserOps 4.0.0 Setup interactively. Setup detects the legacy AppId, explains the replacement, runs the legacy console uninstaller, and installs the new Windows product. SQL databases and SQL Server Agent jobs continue running. At first launch, UserOps copies the password-free profile to its new LocalAppData folder and retains the old copy. Select the existing manager database and job; do not create replacements.
+
+Schema migration 4 updates branding and the test-message procedure without changing quota policies or the compatible `gpManager*` / `SP_GPUM_*` contract. Run the migration through the wizard after verifying the customer backup.
 
 If upgrading from the original SQL-only schema, follow the full SQL upgrade wizard. Do not create a new manager database in place of upgrading the existing one.
 
@@ -97,3 +101,4 @@ Uninstall removes the console, not SQL databases or the job. To stop automation,
 - [Microsoft Windows Server release/build information](https://learn.microsoft.com/en-us/windows/release-health/windows-server-release-info).
 - [Microsoft Server Core and Desktop Experience differences](https://learn.microsoft.com/en-us/windows-server/get-started/install-options-server-core-desktop-experience).
 
+Microsoft Dynamics GP is a Microsoft product. Dynamics GP UserOps is independent and is not affiliated with or endorsed by Microsoft.

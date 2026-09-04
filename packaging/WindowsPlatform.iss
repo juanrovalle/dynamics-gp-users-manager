@@ -1,7 +1,7 @@
 // Shared by production Setup and the non-installing platform test harness.
 // Build families: Windows Server LTSC 2016, 2019, 2022, 2025.
 // Registry InstallationType must be "Server" (Desktop Experience), not Core/Nano.
-function GPUMPlatformSupported(Major, Minor, Build, ProductType: Cardinal;
+function UserOpsPlatformSupported(Major, Minor, Build, ProductType: Cardinal;
   InstallationType: String): Boolean;
 begin
   Result := False;
@@ -18,7 +18,7 @@ begin
             (Build = 20348) or (Build = 26100);
 end;
 
-function GPUMCurrentPlatformSupported(): Boolean;
+function UserOpsCurrentPlatformSupported(): Boolean;
 var
   Version: TWindowsVersion;
   InstallationType: String;
@@ -28,11 +28,11 @@ begin
   if not RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\Windows NT\CurrentVersion',
     'InstallationType', InstallationType) then
   begin
-    Log('GPUM: cannot determine the Windows installation type.');
+    Log('Dynamics GP UserOps: cannot determine the Windows installation type.');
     Result := False;
     Exit;
   end;
-  Log(Format('GPUM platform: %d.%d.%d; ProductType=%d; InstallationType=%s', [Version.Major, Version.Minor, Version.Build, Version.ProductType, InstallationType]));
-  Result := GPUMPlatformSupported(Version.Major, Version.Minor, Version.Build,
+  Log(Format('UserOps platform: %d.%d.%d; ProductType=%d; InstallationType=%s', [Version.Major, Version.Minor, Version.Build, Version.ProductType, InstallationType]));
+  Result := UserOpsPlatformSupported(Version.Major, Version.Minor, Version.Build,
     Version.ProductType, InstallationType);
 end;

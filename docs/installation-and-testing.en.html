@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dynamics GP UserOps 4.0.0 — Installation and testing</title><style>
+:root{font-family:"Segoe UI Variable Text",Segoe UI,Arial,sans-serif;color:#102A43;background:#F4F7FA;line-height:1.65}
+body{margin:0}header{background:#102A43;color:white;padding:48px max(24px,calc((100vw - 1040px)/2))}
+header small{color:#9CC7FF;letter-spacing:2px}h1{font-size:38px;line-height:1.2;margin:12px 0}header p{max-width:800px;color:#D7E5F2}
+main{max-width:1040px;margin:30px auto;padding:0 24px 70px}section{background:white;padding:30px 36px;margin:22px 0;border-radius:12px;border:1px solid #D8E1EA}
+h2{font-size:25px;margin:0 0 16px;color:#1769E0}h3{margin-top:28px}a{color:#1769E0}li{margin:8px 0}code{background:#EFF4F8;padding:2px 5px;overflow-wrap:anywhere}pre{background:#102A43;color:#f4f8fa;white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;border-radius:8px}pre code{background:none;padding:0}
+.note,.warning{padding:15px 18px;border-left:4px solid #1769E0;background:#EEF5FF}.warning{border-color:#bb7020;background:#fff7e9}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;vertical-align:top;border:1px solid #dce5ec;padding:12px}th{background:#edf4f7}.tag{font-size:13px;color:#526b80}nav a{display:inline-block;margin:5px 15px 5px 0}
+@media(max-width:650px){section{padding:22px 18px}h1{font-size:30px}main{padding:0 12px}table{font-size:12px}th,td{padding:7px}}
+@media print{body{background:white}header{padding:20px;color:#142b40;background:white}header p,header small{color:#142b40}main{margin:0;padding:0}section{border:0;padding:15px 0;break-inside:auto}h2,h3{break-after:avoid}table,tr,.warning,.note{break-inside:avoid}nav{display:none}}
+
+.languages{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:20px}.languages a{padding:8px 14px;border:1px solid #B9C9D8;border-radius:7px;text-decoration:none;background:white;margin:0}.languages a[aria-current=page]{background:#1769E0;color:white;border-color:#1769E0}.languages span{color:#526b80;font-size:13px}.language-note{font-size:14px;color:#526b80}pre{tab-size:4}</style><link rel="alternate" hreflang="es" href="installation-and-testing.es.html"></head><body>
+<header><small>PRODUCT GUIDE · VERSION 4.0.0</small><h1>Dynamics GP UserOps<br>Step-by-step installation and testing</h1>
+<p>IT installs the product and prepares the accounts. The GP administrator manages departments, quotas and assignments in the console. SQL Server Agent enforces quotas even when the console is closed.</p></header>
+<main><nav class="languages" aria-label="Language and guides"><a href="index.html">Guías / Guides</a><a lang="es" hreflang="es" href="installation-and-testing.es.html">Español</a><a lang="en" hreflang="en" href="installation-and-testing.en.html" aria-current="page">English</a><a href="windows-server.en.html">Windows Server</a></nav>
+<p class="language-note">The application interface is English. Setup and this offline guide are available in English and Spanish.</p>
+<nav><a href="#preparar">1. Prepare</a><a href="#setup">2. Install on Windows</a><a href="#wizard">3. Configure SQL</a><a href="#tests">4. Test</a><a href="#upgrade">5. Upgrade</a><a href="#uninstall">6. Uninstall</a><a href="#support">7. Troubleshoot</a></nav>
+
+<section id="preparar"><h2>1. Before you begin</h2>
+<p>First run these tests against an isolated copy of GP, using test accounts with no live business operations in progress. After the results are accepted, repeat the installation in the environment agreed with the customer.</p>
+<div class="warning"><strong>What session removal does:</strong> it deletes the selected session's GP and Dexterity records. It does not gracefully close the GP window or safely cancel the user's work. An active session can be affected. Do not test removal with users posting real business documents.</div>
+<h3>Collect this information</h3>
+<table><thead><tr><th>Item</th><th>Example / information to record</th></tr></thead><tbody>
+<tr><td>Administration computer</td><td>Windows 11 x64 or Windows Server 2016/2019/2022/2025 x64 with Desktop Experience. No SDK, preinstalled .NET, sqlcmd or IIS is required. This product's local console is not supported on Server Core or Nano Server.</td></tr>
+<tr><td>SQL Server endpoint</td><td><code>SERVER\INSTANCE</code> or <code>server,port</code>. Network access, firewall and certificate approved by IT.</td></tr>
+<tr><td>SQL engine</td><td>SQL Server 2016 SP1 or later with SQL Server Agent running. Express cannot run this engine.</td></tr>
+<tr><td>GP system database</td><td>Usually <code>DYNAMICS</code>. Do not select a company database instead.</td></tr>
+<tr><td>UserOps database</td><td><code>DynamicsGPUserOps</code> for a new installation. An upgrade must select the existing database stored in the migrated 3.x profile.</td></tr>
+<tr><td>Exact builds</td><td>SQL version/edition/collation, GP version/build, Windows version and client type: local, RDS or Citrix.</td></tr>
+<tr><td>Backup</td><td>Verified backups of the manager, GP databases and job definitions, with a coordinated recovery procedure.</td></tr>
+<tr><td>Test users</td><td>Two existing GP accounts, a test company and someone who can observe the GP client.</td></tr>
+</tbody></table>
+<p>The SQL technical minimum does not replace the support matrix for your GP version. Compatibility with a real GP build has not been confirmed here; record it during these tests.</p>
+<h3>Prepare existing SQL Server identities</h3>
+<ol>
+<li>IT uses a <strong>sysadmin</strong> identity to install SQL objects. This is not the GP administrator's daily account.</li>
+<li>Create or identify a Windows login, Windows group or SQL login for the GP administrator. Assign the product's <strong>Administrator</strong> role in the wizard. Use <strong>Reader</strong> for read-only access.</li>
+<li>Create or identify a separate individual engine login, such as <code>UserOps_Engine</code>. It must not be sysadmin or the installation identity. Do not use a Windows group for this login.</li>
+<li>Identify an administrative owner for the SQL Agent job. The wizard requires an explicit selection. That owner restores tempdb permissions after restarts, then runs quota enforcement as the restricted engine login.</li>
+</ol>
+<p>If a login is needed, IT can create it in SSMS → Security → Logins → New Login. Use Windows authentication where appropriate; apply the customer's password policy to SQL accounts. Do not grant sysadmin to the operator or engine login. This application does not create GP users.</p>
+<p>SQL passwords entered in the console remain only for the current session. They are not included in the saved profile, diagnostic export or job command. A SQL-authenticated operating login requires the server to allow SQL authentication.</p>
+</section>
+
+<section id="setup"><h2>2. Install the Windows console</h2>
+<ol>
+<li>Copy <code>Setup.exe</code> to the administration computer. It does not need to be installed on every GP workstation.</li>
+<li>Check the version and SHA-256 supplied with the package. If the delivery is signed, check Properties → Digital Signatures and the publisher. <strong>The package generated here is unsigned</strong>; do not mistake it for a Microsoft-signed product. IT must approve its origin under the customer's policy.</li>
+<li>Run Setup, choose a language, review the MIT license, confirm the folder and install. Windows administrator elevation is required to copy the application.</li>
+<li>Open <strong>Dynamics GP UserOps</strong> from Start. Shortcuts to both language guides are included. The runtime is bundled; installation does not download dependencies.</li>
+<li>To view the interface without a server connection, click <strong>View demo</strong>. It uses fictitious data and makes no changes.</li>
+</ol>
+<h3>When installing on Windows Server</h3>
+<ol>
+<li>Use Server Manager / system information to confirm Desktop Experience rather than Server Core. The installer checks the installation type and build before copying application files.</li>
+<li>Install one console on the chosen administration server. RDP is acceptable; the interactive session does not need to remain open for quota enforcement.</li>
+<li>For SQL on the same server, use its actual name, such as <code>SRV-GP</code> or <code>SRV-GP\INSTANCE</code>. For remote SQL, use the host/port agreed with IT. Do not change the GP database.</li>
+<li>IT must verify connectivity and the certificate. Setup does not modify the firewall, RDP, SQL services, IIS or Windows roles.</li>
+<li>The console runs as the user who opens it. SQL installation credentials are requested separately in the wizard and are not saved.</li>
+</ol>
+<div class="note">Setup installs Windows files. Tables, procedures, permissions, and the job are installed afterward through <strong>Setup / upgrade wizard</strong>. These are two separate stages.</div>
+</section>
+
+<section id="wizard"><h2>3. Complete the IT wizard</h2>
+<h3>Step 1 — Connect</h3>
+<ol>
+<li>On the initial screen, open <strong>Setup / upgrade wizard</strong>.</li>
+<li>Enter the server/instance and choose Windows authentication or an administrative SQL login. Enter a password only when required.</li>
+<li>Click <strong>List databases</strong>. Select the GP system database and enter or select the UserOps database.</li>
+<li>If SQL has a trusted certificate, leave the explicit certificate-trust option unchecked. Enable it only by IT's decision when that environment requires accepting the server certificate.</li>
+<li>Click <strong>Continue</strong>.</li>
+</ol>
+<p><strong>Expected result:</strong> checks for the selected server appear; no manager objects have been created yet.</p>
+
+<h3>Step 2 — Verify</h3>
+<ol>
+<li>Check installation permissions, SQL version, Agent, GP/Dexterity tables, the SY30000 schema and destination database.</li>
+<li>If a check fails, resolve its cause with IT and use <strong>Run verification again</strong>. Do not proceed with errors.</li>
+<li>Under <strong>Job to retain</strong>, select an existing job or <strong>Create the Dynamics GP UserOps job</strong>. Existing jobs require an explicit choice. A multi-step job is not rewritten: create a new product job and later confirm that the previous one will be disabled.</li>
+<li>Have IT also review custom jobs that call the procedure indirectly through a wrapper. Detection looks for direct references to <code>SP_LOGOUTGPUSER_BY_QUOTE</code>.</li>
+</ol>
+<p><strong>Expected result:</strong> all checks pass and exactly one job selection is agreed. Unselected jobs have not been disabled yet.</p>
+
+<h3>Step 3 — Install</h3>
+<ol>
+<li>Recheck the server and databases. Confirm outside the wizard that the required backup exists.</li>
+<li>Click <strong>Install / upgrade objects</strong> and wait for the result.</li>
+<li>Continue only when the wizard reports that the objects were installed.</li>
+</ol>
+<p><strong>Expected result:</strong> a new installation remains paused. An upgrade preserves departments, users, settings and policies. Duplicate data is not deleted to “fix” a migration; invalid existing data requires IT intervention. An object-creation failure can leave a new empty database. Do not delete existing databases to retry.</p>
+
+<h3>Step 4 — Configure</h3>
+<ol>
+<li>Click <strong>Open departments, quotas, and customer registration</strong>. This window temporarily uses the IT session.</li>
+<li>In <strong>Departments</strong>, click <strong>New</strong>, enter the name and quota, choose whether it is enabled, and select <strong>Save department</strong>. A quota of 0 means any assigned session exceeds the limit; it does not mean unlimited.</li>
+<li>In <strong>Users</strong>, find an existing GP account, select it and its department, then click <strong>Save assignment</strong>. Repeat for the agreed accounts. Removing an assignment does not delete the GP account.</li>
+<li>In <strong>Settings</strong>, review activity protection and native notifications. Enter customer, contact, purchase and maintenance information. The maintenance date does not lock the product. Save and close this window to return to the wizard.</li>
+<li>Select an operating identity and its role; click <strong>Add identity</strong> for each account or group.</li>
+<li>Select the restricted engine login and administrative job owner. Click <strong>Apply permissions</strong>.</li>
+</ol>
+<p><strong>Expected result:</strong> quotas and assignments are saved, and permissions are applied to existing identities. The wizard adds permissions: removing an identity from its selection does not revoke previous permissions. IT must review or revoke earlier permissions separately.</p>
+
+<h3>Step 5 — Test</h3>
+<ol>
+<li>Review the candidate list. This query does not remove sessions.</li>
+<li>Explicitly enter the GP recipient username and select the company.</li>
+<li>With that user connected to GP, click <strong>Send test message</strong> and confirm the recipient.</li>
+<li>Observe the GP client. Check <strong>I confirmed that the user received the message in GP</strong> only if the message actually appeared. A row in <strong>Activity</strong> is not sufficient.</li>
+<li>Continue. When native notifications are enabled, the wizard requires a test send and confirmation.</li>
+</ol>
+<p><strong>Expected result:</strong> the correct GP client displays the message without its session being removed. The application cannot automatically confirm delivery or reading.</p>
+
+<h3>Step 6 — Activate</h3>
+<ol>
+<li>Review the selected job, identities and names of the jobs that will be disabled.</li>
+<li>Confirm the removal policy and job selection.</li>
+<li>To finish without enabling removals, choose <strong>Finish with automation paused</strong>. To start enforcement, choose <strong>Activate and finish</strong>.</li>
+<li>Close the IT session. Connect on the main screen with the operating identity, using the same databases.</li>
+</ol>
+<p><strong>Expected result:</strong> one selected job runs quota enforcement; the other detected jobs are disabled, not deleted. The job may be enabled while the manager is paused: it then records PAUSED without removing sessions.</p>
+<div class="warning">The job is scheduled every minute. After activation, an eligible session may be removed on the next run. Do not activate until the policy is agreed and test users are ready.</div>
+</section>
+
+<section id="tests"><h2>4. Run acceptance tests</h2>
+<p>Record the date, tester, version/build, initial state, actual result, evidence and pass/fail/not-run status for each test. Do not mark an installation as validated if a test does not meet its expected result.</p>
+<table><thead><tr><th>Test</th><th>Steps</th><th>Expected result</th></tr></thead><tbody>
+<tr><td>A. Clean Windows / offline</td><td>On a Windows 11 x64 or Server Desktop Experience VM without the SDK, .NET or sqlcmd, disconnect Internet, install Setup and open the console. Keep access to the SQL network for the connection test.</td><td>The console and guide open without downloading dependencies. Remote SQL connects if the network is available.</td></tr>
+<tr><td>B. Authentication and permissions</td><td>Connect using Windows authentication, then an authorized SQL login. Repeat with Reader and an unauthorized account. Also try an incorrect password.</td><td>Valid accounts operate within their roles. Reader can read but cannot change quotas. Invalid access fails without saving passwords.</td></tr>
+<tr><td>C. New installation</td><td>Use a new UserOps database. Install objects and check before activation. Finish paused and wait for a job run.</td><td>No sessions are removed. Overview shows paused automation and the latest PAUSED execution.</td></tr>
+<tr><td>D. Quotas and assignments</td><td>Create a test department with quota 1 and assign two GP users. Edit its quota, disable and re-enable it, and remove then restore an assignment.</td><td>Changes require no manual SQL and appear in Activity. GP accounts remain. Disabled departments are not enforced.</td></tr>
+<tr><td>E. Concurrent edits</td><td>Open two consoles with the same department selected. Save a change in the first, then save from the second without refreshing.</td><td>The second receives a revision conflict and must refresh; it does not silently overwrite the first change.</td></tr>
+<tr><td>F. Preview and test message</td><td>With two users in a quota-1 department, review wizard candidates. Send a test message to an explicitly chosen user/company.</td><td>Preview removes no data. The correct user receives the message without session removal.</td></tr>
+<tr><td>G. Removal and actual receipt</td><td>In test GP, start the second session after the first. Activate and wait for the next job run. Observe both GP windows and Activity.</td><td>At most the newest session in the over-quota department is removed. QUOTA_REMOVED and QUEUED_GP appear. Separately confirm that GP displays the message after removal.</td></tr>
+<tr><td>H. More than one excess session</td><td>Connect three test users to a quota-1 department and observe successive job runs.</td><td>At most one session is removed per execution. No additional user is removed after the quota is reached.</td></tr>
+<tr><td>I. Activity protection</td><td>Enable protection in Settings. With GP support, prepare recorded test activity for the newest candidate.</td><td>ACTIVITY_BLOCKED appears and the candidate is not removed. No older user is selected instead. Do not use real documents for this test.</td></tr>
+<tr><td>J. Console closed</td><td>Activate in the test environment, close every console and generate an excess. Wait at least two minutes and reconnect.</td><td>The job kept running and history records the outcome.</td></tr>
+<tr><td>K. Pause / resume</td><td>Click Pause automation, generate an excess and wait for two executions. Then click Resume automation.</td><td>No removals occur while paused; PAUSED is recorded. Quotas are enforced again after reactivation.</td></tr>
+<tr><td>L. No recent execution</td><td>Only in testing, have IT temporarily disable the selected job for more than three minutes while automation_enabled remains true.</td><td>The console says “No recent execution” without claiming Agent is stopped. IT re-enables the job and verifies recovery.</td></tr>
+<tr><td>M. SQL / tempdb restart</td><td>In the isolated environment, have IT restart SQL and Agent. Open GP so the Dexterity tables exist, then wait for the job.</td><td>Required tempdb permissions are restored and the engine runs under its restricted identity.</td></tr>
+<tr><td>N. Interrupted connection</td><td>In a test VM, interrupt SQL connectivity during a query/change, restore it, reconnect and reload the data.</td><td>An error is shown and data remains consistent. If the server response was lost, check history before repeating: the change may already have committed.</td></tr>
+<tr><td>O. Concurrency / rollback</td><td>IT runs the isolated SQL suite described in the source repository's tests/README.md. Also start two almost-simultaneous executions in separate sessions against the same excess.</td><td>Runs serialize and recalculate the excess. A notification-insert failure rolls back all five deletion targets and is audited; no partial removal remains.</td></tr>
+<tr><td>P. Upgrade / previous jobs</td><td>On a copy of the original schema with existing jobs, follow section 5 and test keeping one or creating the new product job.</td><td>Data/settings remain and two enforcement jobs are not left active. No silent schema downgrade occurs.</td></tr>
+<tr><td>Q. Uninstall</td><td>In testing, record configuration and the job. Uninstall as in section 6, then reinstall the console.</td><td>SQL objects, data and the job remain intact. The console reconnects to the preserved installation.</td></tr>
+</tbody></table>
+<h3>Critical check: notifications after removal</h3>
+<p><code>QUEUED_GP</code> means the native row was inserted, not that GP displayed it. Record the delay, whether the client was busy, what happened after reconnection and the receiving user/company. If no message appears after removal, do not accept that combination. Work with GP support to determine whether notification before removal and a grace period are needed. That alternative has not been implemented automatically.</p>
+<h3>Additional Windows Server test</h3>
+<p>Install from a local or RDP desktop session. Check the local and remote SQL connections that the customer will use. Close the console and sign out of RDP; observe from another computer that the job keeps running and recording executions. Also verify that Setup rejects Server Core without installing the application. Record results separately for 2016, 2019, 2022 and 2025; do not extrapolate Windows 11 results to Server.</p>
+<h3>Checks already performed during development</h3>
+<p>C# compilation, local logic/resource/T-SQL syntax checks and screen rendering with fictitious data were verified. These checks are not equivalent to running the acceptance tests above. No deployment against a real SQL Server/GP environment or clean Windows installation was performed on this development machine.</p>
+</section>
+
+<section id="upgrade"><h2>5. Upgrade an existing installation</h2>
+<div class="note"><strong>From GP Users Manager 3.x to Dynamics GP UserOps 4.0.0:</strong> run Setup interactively. It removes only the legacy Windows console, installs the new product identity, and keeps the existing SQL database and Agent jobs running. First launch copies the password-free profile into the new LocalAppData folder and retains the original copy. Schema migration 4 changes branded metadata and the test message without changing quotas or job policy.</div>
+<ol>
+<li>Record version, departments, quotas, assignments, policies, active/paused state and existing jobs. IT makes backups and agrees a maintenance window.</li>
+<li>Close the GP Users Manager 3.x console and run Dynamics GP UserOps Setup interactively. Confirm the legacy-console replacement.</li>
+<li>Open the wizard with the IT account. Select <strong>the same manager database and the same GP database</strong>. Do not create another database as an “upgrade.”</li>
+<li>Review jobs and explicitly select the one to keep. The wizard should not rewrite a multi-step job; choose creation of the product job in that case.</li>
+<li>Run migrations, review preserved data, select identities and test messages.</li>
+<li>Finish in the agreed state. If it was paused and must remain so, choose <strong>Finish with automation paused</strong>; do not activate by habit.</li>
+<li>Repeat checks for operation, permissions and execution with the console closed.</li>
+</ol>
+<p>The installer rejects a newer database schema and does not change the binding to other GP/Dexterity databases. No reverse-schema migration is included. On failure, keep diagnostics and use IT's recovery procedure; do not delete data to reinstall.</p>
+</section>
+
+<section id="uninstall"><h2>6. Uninstall without surprises</h2>
+<p><strong>Uninstalling the console does not stop the job or delete databases.</strong> The uninstaller warns about this and also preserves the local password-free connection profile.</p>
+<ol>
+<li>If removing only the console from a computer, uninstall through Windows Settings → Apps. The engine keeps running.</li>
+<li>To stop the entire product, first click <strong>Pause automation</strong> and verify a PAUSED execution.</li>
+<li>IT can disable the selected job after confirming pause. Retain backups and history under the customer's policy.</li>
+<li>Uninstall the console. Permanent database/object deletion requires a separate DBA decision; Setup does not perform it.</li>
+</ol>
+</section>
+
+<section id="support"><h2>7. Diagnostics and troubleshooting</h2>
+<table><thead><tr><th>Problem</th><th>What to check</th></tr></thead><tbody>
+<tr><td>Cannot connect</td><td>Server/instance/port, firewall, network, authentication mode, enabled login and certificate. Do not send passwords to support.</td></tr>
+<tr><td>Agent check fails</td><td>IT checks the service, SQL edition and permissions. The console does not install SQL Server or automatically start services.</td></tr>
+<tr><td>DEX_SESSION / DEX_LOCK missing</td><td>Confirm test GP is prepared and a client has been opened after SQL restart. Do not invent Dexterity tables in production.</td></tr>
+<tr><td>Incompatible message schema</td><td>Review the GP build, SY30000, types/lengths/defaults and customizations. Do not force an insert by ignoring verification.</td></tr>
+<tr><td>Cannot reactivate</td><td>If native messages were newly enabled, complete test send and confirmation in the IT wizard. Also check the product administrator permission.</td></tr>
+<tr><td>No recent execution</td><td>Job status, schedule, error history, permissions, Agent and SQL. The status text does not identify the cause automatically.</td></tr>
+<tr><td>Cannot save a change</td><td>Operating role, valid quotas and revision conflicts. Refresh rather than overwriting another administrator's changes.</td></tr>
+<tr><td>Message queued but not visible</td><td>User, company, GP client and timing after removal. Do not mark it read based only on SQL.</td></tr>
+</tbody></table>
+<p>From <strong>Settings → Export diagnostics</strong>, save the support JSON. It includes product version, database/server and engine state; it excludes passwords, customer registration and free-text audit content. Review it before sharing: server/database names are still internal information.</p>
+<p>Provide the package version, SQL/GP builds, failed step, UTC date/time and an error screenshot without secrets. For engine issues, IT should also review Agent job history and the console's <strong>Activity</strong>.</p>
+<p class="tag">Customer registration does not activate or deactivate the software. The acquired version continues working without maintenance renewal. The repository's MIT license is preserved.</p>
+</section>
+<p class="tag">Microsoft Dynamics GP is a Microsoft product. Dynamics GP UserOps is independent and is not affiliated with or endorsed by Microsoft.</p>
+</main>
+</body></html>

@@ -16,7 +16,7 @@ SELECT @rev=revision FROM dbo.gpManagerUser WHERE username=N'unassigned';
 EXEC dbo.SP_GPUM_UNASSIGN_USER @Username=N'unassigned',@Revision=@rev;
 IF NOT EXISTS(SELECT 1 FROM GPManagerTestGP.dbo.SY01400 WHERE USERID='unassigned') THROW 52202,'GP account removed.',1;
 SELECT @rev=revision FROM dbo.gpManagerSettings WHERE ID=1;
-EXEC dbo.SP_GPUM_SAVE_SETTINGS @ProtectTransactions=1,@NotifyInGP=0,@Customer=N'Pilot',@Contact=N'',
+EXEC dbo.SP_GPUM_SAVE_SETTINGS @ProtectTransactions=1,@NotifyInGP=0,@Customer=N'Test Customer',@Contact=N'',
  @PurchasedOn='20200101',@MaintenanceUntil='20210101',@Revision=@rev;
 EXEC dbo.SP_GPUM_SET_AUTOMATION @Enabled=1;
 IF NOT EXISTS(SELECT 1 FROM dbo.gpManagerSettings WHERE automation_enabled=1 AND maintenance_until='20210101') THROW 52203,'Expired maintenance restricted operation.',1;
@@ -25,7 +25,7 @@ SELECT @count=COUNT(*) FROM GPManagerTestGP.dbo.ACTIVITY;
 EXEC dbo.SP_LOGOUTGPUSER_BY_QUOTE;
 IF @count<>(SELECT COUNT(*) FROM GPManagerTestGP.dbo.ACTIVITY) OR NOT EXISTS(SELECT 1 FROM dbo.gpManagerRuntime WHERE last_outcome='PAUSED') THROW 52204,'Pause failed.',1;
 SELECT @rev=revision FROM dbo.gpManagerSettings WHERE ID=1;
-EXEC dbo.SP_GPUM_SAVE_SETTINGS @ProtectTransactions=1,@NotifyInGP=1,@Customer=N'Pilot',@Contact=N'',@Revision=@rev;
+EXEC dbo.SP_GPUM_SAVE_SETTINGS @ProtectTransactions=1,@NotifyInGP=1,@Customer=N'Test Customer',@Contact=N'',@Revision=@rev;
 SET @failed=0;
 BEGIN TRY
  EXEC dbo.SP_GPUM_SET_AUTOMATION @Enabled=1,@ConfirmMessageObserved=NULL;
@@ -61,4 +61,3 @@ IF @failed=0 THROW 52208,'Reader modified department.',1;
 DROP USER GPUMTestReader;
 PRINT 'ALL ADMINISTRATION TESTS PASSED';
 GO
-

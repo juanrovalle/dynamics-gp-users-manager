@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dynamics GP UserOps 4.0.0 — Instalación en Windows Server</title><style>
+:root{font-family:"Segoe UI Variable Text",Segoe UI,Arial,sans-serif;color:#102A43;background:#F4F7FA;line-height:1.65}
+body{margin:0}header{background:#102A43;color:white;padding:48px max(24px,calc((100vw - 1040px)/2))}
+header small{color:#9CC7FF;letter-spacing:2px}h1{font-size:38px;line-height:1.2;margin:12px 0}header p{max-width:800px;color:#D7E5F2}
+main{max-width:1040px;margin:30px auto;padding:0 24px 70px}section{background:white;padding:30px 36px;margin:22px 0;border-radius:12px;border:1px solid #dce5ec}
+h2{font-size:25px;margin:0 0 16px;color:#1769E0}h3{margin-top:28px}a{color:#1769E0}li{margin:8px 0}code{background:#EFF4F8;padding:2px 5px;overflow-wrap:anywhere}pre{background:#102A43;color:#f4f8fa;white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;border-radius:8px}pre code{background:none;padding:0}
+.note,.warning{padding:15px 18px;border-left:4px solid #1769E0;background:#EEF5FF}.warning{border-color:#bb7020;background:#fff7e9}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;vertical-align:top;border:1px solid #dce5ec;padding:12px}th{background:#edf4f7}.tag{font-size:13px;color:#526b80}nav a{display:inline-block;margin:5px 15px 5px 0}
+@media(max-width:650px){section{padding:22px 18px}h1{font-size:30px}main{padding:0 12px}table{font-size:12px}th,td{padding:7px}}
+@media print{body{background:white}header{padding:20px;color:#142b40;background:white}header p,header small{color:#142b40}main{margin:0;padding:0}section{border:0;padding:15px 0;break-inside:auto}h2,h3{break-after:avoid}table,tr,.warning,.note{break-inside:avoid}nav{display:none}}
+
+.languages{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:20px}.languages a{padding:8px 14px;border:1px solid #B9C9D8;border-radius:7px;text-decoration:none;background:white;margin:0}.languages a[aria-current=page]{background:#1769E0;color:white;border-color:#1769E0}.languages span{color:#526b80;font-size:13px}.language-note{font-size:14px;color:#526b80}pre{tab-size:4}</style><link rel="alternate" hreflang="en" href="windows-server.en.html"></head><body>
+<header><small>GUÍA DE SERVIDOR · VERSIÓN 4.0.0</small><h1>Dynamics GP UserOps<br>Instalación en Windows Server</h1><p>Administración con Desktop Experience, SQL local o remoto y operación mediante RDP.</p></header>
+<main><nav class="languages" aria-label="Idioma y guías"><a href="index.html">Guías / Guides</a><a lang="es" hreflang="es" href="windows-server.es.html" aria-current="page">Español</a><a lang="en" hreflang="en" href="windows-server.en.html">English</a><a href="installation-and-testing.es.html">Instalación y pruebas</a></nav>
+<p class="language-note">El mismo Setup.exe está preparado para Windows 11 x64 y Windows Server 2016, 2019, 2022 y 2025 x64 con Desktop Experience. La versión 4.0.0 usa el esquema SQL 4. Son destinos de instalación, no una certificación completada en servidores reales; registra la aceptación para los builds exactos de Windows, SQL y GP del cliente.</p>
+<nav><a href="#host">1. Elegir equipo</a><a href="#prerequisites">2. Revisar requisitos</a><a href="#install">3. Instalar</a><a href="#sql">4. Conectar a SQL</a><a href="#verify">5. Verificar</a><a href="#upgrade">6. Actualizar / desinstalar</a></nav>
+<section id="host"><h2>1. Elegir el equipo de administración</h2>
+<p>Instala la consola en un servidor administrativo con escritorio gráfico o en un equipo Windows 11 separado. Puede estar en el equipo de SQL Server, pero no es obligatorio.</p>
+<div class="warning">No instales esta consola gráfica en Server Core ni Nano Server. Setup rechaza esos tipos de instalación. Si SQL/GP está en un servidor sin escritorio, utiliza otro equipo de administración admitido y valida por separado la compatibilidad de SQL/GP del servidor.</div>
+<p>No cambies roles del servidor, agregues IIS, habilites RDP ni expongas puertos SQL solo para instalar la consola. TI debe aprobar por separado los cambios de infraestructura. No se recomienda instalar la consola en un controlador de dominio; detectar un tipo de producto servidor no equivale a recomendar esa arquitectura.</p>
+</section>
+<section id="prerequisites"><h2>2. Revisar los requisitos</h2>
+<p>Ejecuta estas consultas de solo lectura en PowerShell, en el equipo que administrará el producto:</p>
+<pre><code>Get-CimInstance Win32_OperatingSystem |
+    Select-Object Caption, Version, BuildNumber, OSArchitecture, ProductType
+Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' |
+    Select-Object InstallationType</code></pre>
+<p><code>InstallationType</code> debe ser <code>Server</code>, no <code>Server Core</code> ni <code>Nano Server</code>. Setup admite las familias de builds LTSC 14393 (2016), 17763 (2019), 20348 (2022) y 26100 (2025). Las revisiones mensuales de esas familias no requieren otro instalador.</p>
+<p>Prepara un SQL Server existente con Agent, la base de sistema GP y el nombre de la base separada del gestor. Mantén Windows, SQL y GP dentro del ciclo de soporte y la política de actualizaciones del cliente. El soporte del runtime por sí solo no certifica GP.</p>
+<p>Prepara las responsabilidades de cuentas de la <a href="installation-and-testing.es.html#preparar">guía principal</a>: elevación para instalar archivos Windows, administración de instalación SQL, operación diaria del producto e identidad restringida del motor con propietario de Agent elegido explícitamente. Setup no recibe contraseñas SQL.</p>
+</section>
+<section id="install"><h2>3. Instalar los archivos de Windows</h2>
+<ol><li>Copia <code>Setup.exe</code> y compara su SHA-256 con la huella entregada.</li>
+<li>Inicia sesión localmente o mediante una sesión de escritorio RDP autorizada.</li>
+<li>Ejecuta Setup como administrador de Windows, revisa la licencia e instala.</li>
+<li>Abre Dynamics GP UserOps desde Inicio.</li>
+<li>Completa los seis pasos del asistente SQL en la <a href="installation-and-testing.es.html#wizard">guía de instalación y pruebas</a>. La aplicación muestra sus controles en inglés y la guía indica los nombres exactos.</li></ol>
+<p>El paquete incluye .NET Desktop Runtime. No necesitas SDK, sqlcmd, ASP.NET Hosting Bundle ni IIS. La instalación no descarga dependencias.</p>
+<h3>Instalación desatendida opcional de archivos</h3>
+<p>Utiliza una sesión PowerShell elevada. Esto instala únicamente los archivos Windows:</p>
+<pre><code># Trabaja en la carpeta que contiene Setup.exe.
+New-Item -ItemType Directory -Path 'C:\Temp\UserOps' -Force | Out-Null
+$setupProcess = Start-Process -FilePath '.\Setup.exe' `
+    -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/LOG="C:\Temp\UserOps\setup.log"' `
+    -WindowStyle Hidden -Wait -PassThru
+if ($setupProcess.ExitCode -ne 0) {
+    throw "Setup requiere atención; código $($setupProcess.ExitCode). Revisa C:\Temp\UserOps\setup.log."
+}</code></pre>
+<div class="note">Esto no instala objetos SQL, concede permisos SQL ni activa retiros de forma silenciosa. Abre la consola y completa después el asistente. La entrega generada no tiene firma digital; aplica la política del cliente para verificar su origen y utiliza la opción de firma de build.ps1 cuando dispongas de un certificado.</div>
+</section>
+<section id="sql"><h2>4. Conectar a SQL</h2>
+<p>Para SQL local utiliza el nombre real del servidor/instancia, como <code>SRV-GP</code> o <code>SRV-GP\GPINSTANCE</code>. Para SQL remoto usa el servidor/instancia o <code>servidor,puerto</code> aprobado. Ser administrador local de Windows no otorga automáticamente administración de SQL.</p>
+<p>Mantén las conexiones SQL cifradas. TI debe revisar certificado, punto de conexión y autenticación antes de hacer cambios de seguridad.</p>
+<p>Para un puerto TCP fijo conocido, TI puede comprobar conectividad sin modificar el firewall:</p>
+<pre><code># Sustituye el equipo y puerto por los asignados por el DBA.
+Test-NetConnection -ComputerName 'SRV-SQL' -Port 1433</code></pre>
+<p>Una instancia con nombre puede usar otro puerto. Una prueba TCP correcta no equivale a un inicio de sesión SQL correcto ni demuestra permisos en GP.</p>
+</section>
+<section id="verify"><h2>5. Verificar la operación en el servidor</h2>
+<p>Ejecuta la <a href="installation-and-testing.es.html#tests">lista completa de aceptación</a> y, además:</p>
+<ul><li>Prueba la conexión SQL local/remota prevista y ambos modos de autenticación autorizados.</li>
+<li>Comprueba que la instalación inicia en el equipo con Desktop Experience y se rechaza en Core/Nano antes de instalar archivos de la aplicación.</li>
+<li>Verifica que el perfil de conexión de otro usuario RDP sea separado y no contenga contraseña.</li>
+<li>Cierra la consola y termina la sesión RDP. Observa desde otro equipo autorizado que SQL Agent continúa aplicando los cupos.</li>
+<li>Pausa la automatización y confirma una ejecución posterior PAUSED. La pausa afecta globalmente a la base administrada, no solo al usuario RDP actual.</li>
+<li>Reinicia SQL/Agent en el entorno aislado, prepara las tablas GP/Dexterity mediante el cliente GP y verifica que el job se recupere.</li>
+<li>Valida los avisos nativos en el cliente GP real. Ejecutar la consola en Server no demuestra que un usuario GP vio un mensaje.</li></ul>
+<p>El producto no agrega un servicio Windows ni una tarea en el Programador de tareas de Windows. SQL Server Agent sigue siendo el motor. No es necesario mantener una cuenta interactiva conectada para que funcione.</p>
+</section>
+<section id="upgrade"><h2>6. Actualizar o desinstalar</h2>
+<p>Para actualizar desde GP Users Manager 3.x, cierra la consola anterior y ejecuta Dynamics GP UserOps 4.0.0 Setup de forma interactiva. Setup detecta el AppId anterior, retira solo la consola Windows y conserva en ejecución la base SQL y los jobs de Agent. El primer inicio copia el perfil sin contraseña a la nueva carpeta LocalAppData y conserva el original. Selecciona la base y el job existentes; no crees reemplazos.</p>
+<p>La migración 4 actualiza metadatos de marca y el procedimiento del mensaje de prueba. Conserva las políticas de cupo y el contrato SQL compatible <code>gpManager*</code> / <code>SP_GPUM_*</code>.</p>
+<p>Si actualizas desde el esquema original de solo SQL, sigue el asistente completo de actualización SQL. No crees una base del gestor nueva en lugar de actualizar la existente.</p>
+<p>Desinstalar elimina la consola, no las bases SQL ni el job. Para detener la automatización, pausa y verifica PAUSED antes de que el DBA deshabilite el job y se desinstale la consola en Windows.</p>
+</section>
+<section id="references"><h2>Documentación de referencia</h2>
+<p>Las guías funcionan sin Internet. Estos enlaces opcionales abren documentación externa de Microsoft:</p>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/core/install/windows">Plataformas Windows admitidas por .NET</a></li>
+<li><a href="https://learn.microsoft.com/en-us/windows/release-health/windows-server-release-info">Versiones y builds de Windows Server</a></li>
+<li><a href="https://learn.microsoft.com/en-us/windows-server/get-started/install-options-server-core-desktop-experience">Server Core y Desktop Experience</a></li></ul>
+</section><p class="tag">Microsoft Dynamics GP es un producto de Microsoft. Dynamics GP UserOps es independiente y no está afiliado ni respaldado por Microsoft.</p></main>
+</body></html>

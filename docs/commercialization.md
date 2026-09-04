@@ -2,7 +2,7 @@
 
 ## Offer
 
-Sell GP Users Manager as a product plus implementation service: purchase per managed SQL instance, initial setup and optional annual maintenance. Record the legal customer, deployed instance and agreed scope in the order/service agreement. Customer registration in the console is informational; it does not enforce licensing.
+Sell Dynamics GP UserOps as a product plus implementation service: purchase per managed SQL instance, initial setup and optional annual maintenance. Record the legal customer, deployed instance and agreed scope in the order/service agreement. Customer registration in the console is informational; it does not enforce licensing.
 
 The purchased version keeps working when maintenance ends. There is no activation server, offline license file, renewal lock or remote shutdown. Preserve the repository's MIT license and attribution. Service agreements must not represent the software as exclusively proprietary under a conflicting license.
 
@@ -27,3 +27,6 @@ Pricing is not fixed in the application. Set it after measuring deployment and s
 
 Build and test; run customer-environment acceptance; sign application, installer and uninstaller when a certificate is available; verify signatures/checksum; publish versioned artifacts and guides; preserve source/license notices; retain acceptance evidence. Never label an unexecuted test as passed.
 
+## Independent product notice
+
+Microsoft Dynamics GP is a Microsoft product. Dynamics GP UserOps is independent and is not affiliated with, endorsed by, sponsored by, or supported by Microsoft. Include this notice in proposals, product pages, guides, and delivery documents.

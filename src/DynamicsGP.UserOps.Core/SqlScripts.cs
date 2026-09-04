@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-namespace GPManager.Core;
+namespace DynamicsGP.UserOps.Core;
 
 public static partial class SqlScripts
 {
@@ -17,7 +17,7 @@ public static partial class SqlScripts
     {
         SqlNames.Validate(gpDatabase);SqlNames.Validate(dexDatabase);
         script=script.Replace("$(GPDatabase)",gpDatabase,StringComparison.Ordinal).Replace("$(DexDatabase)",dexDatabase,StringComparison.Ordinal);
-        if(script.Contains("$(")||Regex.IsMatch(script,@"(?m)^\s*:")) throw new InvalidOperationException("Directiva SQLCMD no permitida en el manifiesto.");
+        if(script.Contains("$(")||Regex.IsMatch(script,@"(?m)^\s*:")) throw new InvalidOperationException("SQLCMD directives are not allowed in the embedded manifest.");
         return script;
     }
     // Repository scripts use standalone GO only. Stateful lexer prevents splitting strings/comments.
@@ -38,8 +38,7 @@ public static partial class SqlScripts
                 if(line[i]=='\'')quoted=true;
             }
         }
-        if(quoted||comment!=0)throw new InvalidOperationException("Script SQL incompleto.");
+        if(quoted||comment!=0)throw new InvalidOperationException("The SQL script is incomplete.");
         if(!string.IsNullOrWhiteSpace(buffer.ToString()))result.Add(buffer.ToString());return result;
     }
 }
-

@@ -33,9 +33,10 @@ GO
 :r sql/003-operations.sql
 :r sql/004-roles.sql
 :r sql/007-administration.sql
-IF NOT EXISTS (SELECT 1 FROM dbo.gpManagerSchemaVersion WHERE version = 3)
-    INSERT dbo.gpManagerSchemaVersion(version) VALUES (3);
+:r sql/008-userops-brand.sql
+IF NOT EXISTS (SELECT 1 FROM dbo.gpManagerSchemaVersion WHERE version = 4)
+    INSERT dbo.gpManagerSchemaVersion(version) VALUES (4);
 COMMIT;
-PRINT 'GP Users Manager v3 installed. New installations remain paused until activation.';
+PRINT 'Dynamics GP UserOps v4 installed. New installations remain paused until activation.';
 GO
 

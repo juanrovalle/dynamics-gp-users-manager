@@ -1,6 +1,6 @@
 # Compatibility and verification status
 
-Version: 3.0.1.
+Version: 4.0.0. SQL schema: 4.
 
 | Component | Implementation target | Verification status |
 | --- | --- | --- |
@@ -24,4 +24,4 @@ The SQL minimum is an implementation prerequisite, not a claim that every combin
 
 Record for every validated installation: Windows build; SQL product version, edition and collation; GP version/build; GP system database; company; local or RDS/Citrix client; authentication mode; message schema; backup reference; test date; tester; results. Keep “not run” distinct from “failed.”
 
-No Microsoft certification or tested GP compatibility is claimed by this document.
+No Microsoft certification or universal GP compatibility is claimed by this document. Dynamics GP UserOps is an independent product and is not affiliated with or endorsed by Microsoft.

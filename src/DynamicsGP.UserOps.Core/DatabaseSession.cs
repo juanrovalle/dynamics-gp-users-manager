@@ -1,7 +1,7 @@
 using System.Data;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
-namespace GPManager.Core;
+namespace DynamicsGP.UserOps.Core;
 
 public sealed class DatabaseSession : IDisposable
 {
@@ -25,11 +25,11 @@ public sealed class DatabaseSession : IDisposable
     }
     public Task<DataTable> ProcedureAsync(string name,Dictionary<string,object?> parameters)
     {
-        if(!name.StartsWith("SP_GPUM_",StringComparison.Ordinal)&&name!="SP_PREVIEW_GP_QUOTA")throw new ArgumentException("Operación no permitida desde la consola.");
+        if(!name.StartsWith("SP_GPUM_",StringComparison.Ordinal)&&name!="SP_PREVIEW_GP_QUOTA")throw new ArgumentException("This operation is not allowed from the console.");
         var call="EXEC dbo."+SqlNames.Quote(name)+" "+string.Join(",",parameters.Keys.Select(k=>k+"="+k));
         return QueryAsync(call,parameters);
     }
-    public Task<DataTable> SettingsAsync()=>QueryAsync("IF EXISTS(SELECT 1 FROM dbo.gpManagerSchemaVersion WHERE version>3) THROW 51502,'Update the console before using this newer database.',1; IF EXISTS(SELECT 1 FROM dbo.gpManagerSettings WHERE gp_database<>@gp) THROW 51503,'The selected GP database differs from the installation binding.',1; SELECT s.*,r.last_completed_at,r.last_outcome,r.last_error_number,CONVERT(bit,CASE WHEN IS_MEMBER('gpManagerAdmin')=1 OR IS_SRVROLEMEMBER('sysadmin')=1 OR IS_MEMBER('db_owner')=1 THEN 1 ELSE 0 END) AS can_admin FROM dbo.gpManagerSettings s CROSS JOIN dbo.gpManagerRuntime r",new(){["@gp"]=Profile.GPDatabase});
+    public Task<DataTable> SettingsAsync()=>QueryAsync("IF EXISTS(SELECT 1 FROM dbo.gpManagerSchemaVersion WHERE version>4) THROW 51502,'Update the console before using this newer database.',1; IF EXISTS(SELECT 1 FROM dbo.gpManagerSettings WHERE gp_database<>@gp) THROW 51503,'The selected GP database differs from the installation binding.',1; SELECT s.*,r.last_completed_at,r.last_outcome,r.last_error_number,CONVERT(bit,CASE WHEN IS_MEMBER('gpManagerAdmin')=1 OR IS_SRVROLEMEMBER('sysadmin')=1 OR IS_MEMBER('db_owner')=1 THEN 1 ELSE 0 END) AS can_admin FROM dbo.gpManagerSettings s CROSS JOIN dbo.gpManagerRuntime r",new(){["@gp"]=Profile.GPDatabase});
     public Task<DataTable> UsageAsync()=>QueryAsync("SELECT * FROM dbo.vw_gpManagerDepartmentUsage ORDER BY name");
     public Task<DataTable> SessionsAsync()=>QueryAsync("SELECT * FROM dbo.vw_gpManagerSessions ORDER BY logInDate DESC,logInTime DESC");
     public Task<DataTable> DepartmentsAsync()=>QueryAsync("SELECT ID,RTRIM(name) AS name,[limit] AS quota,enabled,revision FROM dbo.gpManagerDepartment ORDER BY name");
@@ -41,7 +41,7 @@ public sealed class DatabaseSession : IDisposable
         var settings=(await SettingsAsync()).Rows[0];
         var version=await QueryAsync("SELECT MAX(version) AS version FROM dbo.gpManagerSchemaVersion");
         // Explicit allowlist: no connection string, password, customer contact or free-text audit content.
-        return JsonSerializer.Serialize(new{application="GP Users Manager",version="3.0.1",schema=version.Rows[0][0],
+        return JsonSerializer.Serialize(new{application=ProductInfo.Name,version=ProductInfo.Version,schema=version.Rows[0][0],
             generatedUtc=DateTime.UtcNow,server=Profile.Server,database=Profile.ManagerDatabase,
             enabled=settings.Flag("automation_enabled"),lastCompleted=NullableValue(settings.Value("last_completed_at")),
             outcome=settings.Text("last_outcome"),errorNumber=NullableValue(settings.Value("last_error_number"))},new JsonSerializerOptions{WriteIndented=true});

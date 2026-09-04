@@ -11,10 +11,9 @@ $process=Start-Process -FilePath $exe -ArgumentList @('/VERYSILENT','/SUPPRESSMS
 if(-not $process.WaitForExit(45000)) { $process.Kill(); throw 'Platform test harness timed out.' }
 if(-not(Test-Path -LiteralPath $log)) { throw 'Platform test log was not created.' }
 $content=Get-Content -LiteralPath $log -Raw
-if($content -notmatch 'GPUM_PLATFORM_SELF_TEST_PASS: 24 cases' -or $content -match 'GPUM_PLATFORM_FAIL') {
+if($content -notmatch 'USEROPS_PLATFORM_SELF_TEST_PASS: 24 cases' -or $content -match 'USEROPS_PLATFORM_FAIL') {
     throw "Platform policy tests failed. Inspect $log"
 }
 # A canceled-setup exit is intentional: the harness must never install anything.
 Write-Output 'PASS 24 Windows platform cases (shared installer policy; no installation performed).'
 Write-Output "Platform test log: $log"
-

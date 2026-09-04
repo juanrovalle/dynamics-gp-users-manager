@@ -1,4 +1,4 @@
-namespace GPManager.Core;
+namespace DynamicsGP.UserOps.Core;
 
 /// <summary>Only trusted, quoted identifiers/literals are interpolated into the Agent step.</summary>
 public static class JobCommands
@@ -13,4 +13,3 @@ public static class JobCommands
         return "EXEC(N'"+bootstrap.Replace("'","''")+"'); EXECUTE AS LOGIN="+literal+"; BEGIN TRY EXEC dbo.SP_LOGOUTGPUSER_BY_QUOTE; REVERT; END TRY BEGIN CATCH REVERT; THROW; END CATCH;";
     }
 }
-

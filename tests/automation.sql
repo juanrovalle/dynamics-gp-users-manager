@@ -6,6 +6,8 @@ IF (SELECT automation_enabled FROM dbo.gpManagerSettings WHERE ID=1)<>0 THROW 52
 EXEC dbo.SP_LOGOUTGPUSER_BY_QUOTE;
 IF (SELECT last_outcome FROM dbo.gpManagerRuntime WHERE ID=1)<>'PAUSED' THROW 52113,'Paused runtime tick missing.',1;
 EXEC dbo.SP_GPUM_TEST_MESSAGE @Username=N'alice',@CompanyID=1;
+IF NOT EXISTS(SELECT 1 FROM GPManagerTestGP.dbo.SY30000 WHERE USERID='alice' AND Offline_Message LIKE 'Dynamics GP UserOps:%')
+    THROW 52114,'Schema-v4 branded test message was not queued.',1;
 EXEC dbo.SP_GPUM_SET_AUTOMATION @Enabled=1,@ConfirmMessageObserved=1;
 -- Fixture-only reset: production code never deletes queued native messages.
 DELETE dbo.gpManagerNotification WHERE username=N'alice';

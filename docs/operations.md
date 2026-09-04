@@ -30,7 +30,7 @@ The engine removes at most one candidate, never selects disabled departments, ch
 
 A notification failure rolls the transaction back. An error is audited and rethrown so Agent can mark the job failed. Inspect last_outcome as well as last_completed_at: a recent error is still a recent execution.
 
-The “Sin ejecución reciente” indicator is based only on a three-minute threshold. Check Agent history, job configuration, SQL connectivity, permissions and server restart state to diagnose it.
+The **No recent execution** indicator is based only on a three-minute threshold. Check Agent history, job configuration, SQL connectivity, permissions and server restart state to diagnose it.
 
 ## Maintenance
 
@@ -41,4 +41,3 @@ The wizard detects direct references to SP_LOGOUTGPUSER_BY_QUOTE. Review custom 
 Disabling a department stops quota enforcement for it. Removing a user assignment never deletes a GP account. Retain audit/outbox data according to the customer's policy; no automatic retention purge is configured.
 
 For full retirement: explicitly pause, verify the PAUSED outcome, have the DBA disable the product's job, back up retained data, then uninstall the console. Database deletion is not part of uninstall.
-

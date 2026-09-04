@@ -34,9 +34,16 @@ jobs:
           }
           run_sql -i ../../tests/fixture.sql
           run_sql -i install.sql -v ManagerDatabase=GPManagerTest GPDatabase=GPManagerTestGP DexDatabase=GPManagerTestDex
+          run_sql -i ../../tests/prepare-v4-rollback.sql
+          if run_sql -i install.sql -v ManagerDatabase=GPManagerTest GPDatabase=GPManagerTestGP DexDatabase=GPManagerTestDex; then
+            echo 'Expected the injected schema-v4 migration failure.' >&2
+            exit 1
+          fi
+          run_sql -i ../../tests/verify-v4-rollback.sql
+          run_sql -i install.sql -v ManagerDatabase=GPManagerTest GPDatabase=GPManagerTestGP DexDatabase=GPManagerTestDex
           run_sql -i install.sql -v ManagerDatabase=GPManagerTest GPDatabase=GPManagerTestGP DexDatabase=GPManagerTestDex
           run_sql -i install.sql -v ManagerDatabase=GPManagerTestFresh GPDatabase=GPManagerTestGP DexDatabase=GPManagerTestDex
-          run_sql -d GPManagerTestFresh -Q "IF (SELECT COUNT(*) FROM dbo.gpManagerSchemaVersion WHERE version=3)<>1 OR (SELECT automation_enabled FROM dbo.gpManagerSettings WHERE ID=1)<>0 THROW 52028, 'Fresh installation failed', 1;"
+          run_sql -d GPManagerTestFresh -Q "IF (SELECT COUNT(*) FROM dbo.gpManagerSchemaVersion WHERE version=4)<>1 OR (SELECT automation_enabled FROM dbo.gpManagerSettings WHERE ID=1)<>0 THROW 52028, 'Fresh installation failed', 1;"
           run_sql -i ../../tests/integration.sql
           run_sql -i ../../tests/automation.sql
           run_sql -i ../../tests/administration.sql

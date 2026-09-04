@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><Version>4.0.0</Version><InformationalVersion>4.0.0</InformationalVersion><IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion><AssemblyTitle>Dynamics GP UserOps Core</AssemblyTitle><RootNamespace>DynamicsGP.UserOps.Core</RootNamespace><AssemblyName>DynamicsGP.UserOps.Core</AssemblyName><Product>Dynamics GP UserOps</Product><Company>Dynamics GP UserOps</Company><Description>Quota governance engine for Microsoft Dynamics GP sessions.</Description><Copyright>Copyright © 2026 Dynamics GP UserOps</Copyright></PropertyGroup>
+  <ItemGroup><PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.6" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../Install/sql/*.sql" Link="Sql/%(Filename)%(Extension)" /><EmbeddedResource Include="migration-manifest.json" /></ItemGroup>
+</Project>

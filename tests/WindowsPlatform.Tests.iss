@@ -1,9 +1,9 @@
 // No application files, shortcuts, registry values, or uninstaller are installed.
 // InitializeSetup always returns False after writing the test result to /LOG.
 [Setup]
-AppName=GPUM platform policy tests
+AppName=Dynamics GP UserOps platform policy tests
 AppVersion=1.0
-DefaultDirName={tmp}\GPUM-platform-tests
+DefaultDirName={tmp}\DynamicsGPUserOps-platform-tests
 CreateAppDir=no
 Uninstallable=no
 PrivilegesRequired=lowest
@@ -21,8 +21,8 @@ var
 procedure CheckPlatform(Name: String; Major, Minor, Build, ProductType: Cardinal;
   InstallationType: String; Expected: Boolean);
 begin
-  if GPUMPlatformSupported(Major, Minor, Build, ProductType, InstallationType) <> Expected then
-    RaiseException('GPUM_PLATFORM_FAIL: ' + Name);
+  if UserOpsPlatformSupported(Major, Minor, Build, ProductType, InstallationType) <> Expected then
+    RaiseException('USEROPS_PLATFORM_FAIL: ' + Name);
   Passed := Passed + 1;
   Log('PASS ' + Name);
 end;
@@ -54,9 +54,8 @@ begin
   CheckPlatform('Desktop domain controller classification', 10, 0, 20348, VER_NT_DOMAIN_CONTROLLER, 'Server', True);
   CheckPlatform('Core domain controller rejected', 10, 0, 20348, VER_NT_DOMAIN_CONTROLLER, 'Server Core', False);
   CheckPlatform('Registry comparison is case insensitive', 10, 0, 20348, VER_NT_SERVER, 'server', True);
-  Log(Format('GPUM_PLATFORM_SELF_TEST_PASS: %d cases', [Passed]));
-  if GPUMCurrentPlatformSupported() then Log('GPUM_CURRENT_PLATFORM_ALLOWED')
-  else Log('GPUM_CURRENT_PLATFORM_REJECTED');
+  Log(Format('USEROPS_PLATFORM_SELF_TEST_PASS: %d cases', [Passed]));
+  if UserOpsCurrentPlatformSupported() then Log('USEROPS_CURRENT_PLATFORM_ALLOWED')
+  else Log('USEROPS_CURRENT_PLATFORM_REJECTED');
   Result := False;
 end;
-
