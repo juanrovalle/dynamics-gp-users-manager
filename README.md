@@ -1,75 +1,140 @@
-# Dynamics GP UserOps
+<p align="center">
+  <img src="assets/DynamicsGPUserOps.svg" width="112" alt="Dynamics GP UserOps logo">
+</p>
 
-Dynamics GP UserOps 4.0.0 is a Windows administration product for managing Microsoft Dynamics GP session quotas by department. Administrators use an English-language desktop console; SQL Server Agent continues running the quota engine every minute when the console is closed.
+<h1 align="center">Dynamics GP UserOps</h1>
 
-## Product capabilities
+<p align="center">
+  Session capacity governance for Microsoft Dynamics GP—without giving operators direct SQL access.
+</p>
 
-- Self-contained C# / WPF console for Windows 11 x64 and Windows Server 2016, 2019, 2022, or 2025 x64 with Desktop Experience.
-- Six-step installation and upgrade wizard: Connect, Verify, Install, Configure, Test, and Activate.
-- Five administration areas: Overview, Departments, Users, Activity, and Settings.
-- Versioned SQL migrations executed with Microsoft.Data.SqlClient. Customer computers do not need `sqlcmd`, IIS, a .NET installation, or software on every GP workstation.
-- Department quotas, enabled/disabled departments, GP-user assignments, optimistic concurrency, audit history, native GP message queuing, and password-free diagnostics.
-- Server-side pause/resume and status reporting. Closing or uninstalling the console does not silently stop the SQL engine.
-- Optional SSRS report; SSRS is not required for normal operation.
+<p align="center">
+  <a href="https://github.com/juanrovalle/dynamics-gp-users-manager/actions/workflows/windows-build.yml"><img src="https://github.com/juanrovalle/dynamics-gp-users-manager/actions/workflows/windows-build.yml/badge.svg" alt="Windows application build"></a>
+  <a href="https://github.com/juanrovalle/dynamics-gp-users-manager/actions/workflows/sql-tests.yml"><img src="https://github.com/juanrovalle/dynamics-gp-users-manager/actions/workflows/sql-tests.yml/badge.svg" alt="SQL integration tests"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-102A43" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/version-4.0.0-1769E0" alt="Version 4.0.0">
+</p>
 
-The application interface is English. Setup and the complete offline guides are available in English and Spanish.
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="docs/index.html">English / Español guides</a> ·
+  <a href="https://github.com/juanrovalle/dynamics-gp-users-manager/releases">Releases</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
-## Installation
+![30-second Dynamics GP UserOps product tour](.github/media/product-tour.gif)
 
-Download the distributed `Setup.exe`, verify its SHA-256 checksum and digital signature, and install it on a supported graphical Windows computer. Setup includes the application, .NET runtime, migration scripts, license, and documentation and makes no Internet downloads. SQL Server and Dynamics GP are existing customer prerequisites.
+<p align="center"><sub>30-second product tour using synthetic demo data. Demo mode makes no SQL Server changes.</sub></p>
 
-Open the offline [guide selector — English / Español](docs/index.html), or choose a guide:
+## The problem it solves
 
-| Guide | English | Español |
-| --- | --- | --- |
-| Installation and testing | [English](docs/installation-and-testing.en.html) | [Español](docs/installation-and-testing.es.html) |
-| Windows Server | [English](docs/windows-server.en.html) | [Español](docs/windows-server.es.html) |
+Dynamics GP environments often have a fixed number of concurrent user seats, while access demand varies by department. Managing that pressure manually means checking sessions, editing SQL, interrupting users without context, and relying on tribal knowledge.
 
-New installations use `DynamicsGPUserOps` as the default manager database and remain paused until an administrator explicitly activates automation. An upgrade from GP Users Manager 3.x removes only the old Windows console, retains its SQL database and jobs, and copies the password-free profile from `%LocalAppData%\GPUsersManager` to `%LocalAppData%\DynamicsGPUserOps` on first launch. The original profile is not deleted. Existing database names and policies are preserved.
+Dynamics GP UserOps gives IT a controlled Windows deployment and gives authorized GP operators a focused console for day-to-day capacity management.
 
-## Engine behavior
+| Operational challenge | Dynamics GP UserOps response |
+| --- | --- |
+| Departments exceed their assigned session capacity | Enforces configurable quotas once per minute through SQL Server Agent |
+| Business users should not administer SQL Server Agent | Provides scoped SQL roles and an application-level pause/resume control |
+| Session removal can interrupt active work | Supports preview, confirmation, activity protection, audit history, and native GP messages |
+| Manual SQL implementations are difficult to support | Ships versioned migrations, preflight checks, diagnostics, and a self-contained Windows installer |
 
-The engine selects the most recent session in an enabled department whose quota is exceeded. It removes at most one session per execution, serializes concurrent executions, and records the result. Existing SQL tables, roles, views, and procedures named `gpManager*` and `SP_GPUM_*` remain the compatible database contract in version 4.
+## Quick start
 
-Forced record removal is not a graceful GP logout and does not kill a SQL connection. It can interrupt work. An optional policy blocks a selected candidate when SY00800/SY00801 activity exists; the absence of those records is not proof of inactivity.
+1. Download `Setup.exe` and `Setup.exe.sha256` from [GitHub Releases](https://github.com/juanrovalle/dynamics-gp-users-manager/releases), verify the checksum, and verify the publisher signature when the package is identified as signed.
+2. Run Setup on a supported Windows 11 or Windows Server Desktop Experience computer. Connect to the GP system database and complete **Connect → Verify → Install → Configure → Test**.
+3. Confirm the test message in a real Dynamics GP client, review the removal policy, and select **Activate**. New installations remain paused until this final action.
 
-Native notifications use a schema-checked SY30000 adapter. Removal, audit, and notification insertion share a transaction, so a notification error rolls back the removal. `QUEUED_GP` means queued, not read. Confirm actual reception after removal with the customer's installed GP client. See [notification integration](docs/gp-notifications.md).
+Setup includes the .NET runtime, application, migrations, license, and offline documentation. Customer computers do not need `sqlcmd`, IIS, an existing .NET installation, or Internet access during installation.
 
-Overview displays **No recent execution** after more than three minutes without a recorded completion. The status does not by itself identify whether Agent, permissions, connectivity, or another condition is responsible.
+For production deployment, follow the complete [installation and testing guide](docs/installation-and-testing.en.html) or the [Windows Server guide](docs/windows-server.en.html). Spanish versions are available from the [guide selector](docs/index.html).
 
-## Security and lifecycle
+## What you can manage
 
-- Installation uses a SQL administrator; daily operation and job execution use separately selected existing identities with scoped roles.
-- SQL passwords remain in process memory only and are never saved to profiles, logs, or diagnostics.
-- Database connections require encryption; trusting a server certificate is an explicit IT choice.
-- Uninstall removes Windows files only. SQL databases, configuration, audit data, and jobs are retained.
-- Maintenance dates are informational. Version 4.0.0 has no activation server, license file, expiration lock, or remote shutdown.
+- Monitor current GP sessions, departmental capacity, overages, automation state, and recent execution.
+- Create, edit, disable, and assign quotas to departments.
+- Assign existing Dynamics GP users to departments without creating or modifying GP accounts.
+- Preview the next enforcement candidate before removing any session.
+- Pause or activate the server-side automation without granting general SQL Server Agent administration.
+- Review removals, blocked operations, errors, and native GP messages in one activity history.
+- Export password-free diagnostics for support.
+
+## Screenshots
+
+| Capacity overview | Department quotas |
+| --- | --- |
+| <img src=".github/media/overview.png" alt="Dynamics GP UserOps capacity overview"> | <img src=".github/media/departments.png" alt="Dynamics GP UserOps department management"> |
+
+| User assignments | Operations and GP messages |
+| --- | --- |
+| <img src=".github/media/users.png" alt="Dynamics GP UserOps user assignments"> | <img src=".github/media/activity.png" alt="Dynamics GP UserOps operations and GP messages"> |
+
+All screenshots use synthetic data. The application UI is English; Setup and offline deployment guides are available in English and Spanish.
+
+## Common use cases
+
+- **Departmental capacity governance:** reserve concurrent-session capacity for Finance, Sales, Operations, or other business units.
+- **Shared or hosted GP environments:** centralize policy for RDS, Citrix, and multi-office deployments while keeping the console off GP workstations.
+- **Delegated operations:** let an authorized GP administrator manage quotas and assignments without writing SQL.
+- **Controlled enforcement:** preview candidates, protect sessions with recorded GP activity, remove no more than one session per run, and retain an audit trail.
+- **User communication:** queue a native GP message when a session is removed and separately verify delivery during deployment acceptance.
+- **Support and compliance:** export diagnostics without passwords and review the last 500 operational and notification events.
+
+## How it works
+
+The WPF console manages configuration in the UserOps database. SQL Server Agent executes the enforcement procedure every minute—even when the console is closed—and records every outcome before optionally posting through the compatible Dynamics GP native-message schema.
+
+The engine serializes concurrent executions, rechecks the selected session under locks, removes at most one session per run, and rolls back the removal if audit or notification insertion fails. Forced record removal is not a graceful Dynamics GP logout and does not terminate the GP process or SQL connection.
+
+## Platform and safety
+
+- Windows 11 x64 or Windows Server 2016, 2019, 2022, or 2025 x64 with Desktop Experience.
+- SQL Server 2016 SP1 or later with SQL Server Agent. SQL Server Express is not supported by this distribution.
+- Self-contained .NET 10 desktop application; no runtime installation is required on the customer computer.
+- Windows or existing SQL identities with separate installation, operation, and job permissions.
+- SQL passwords are held only for the active session and are not stored in profiles, logs, or diagnostics.
+- Uninstall removes Windows application files only; it does not silently delete SQL data or stop the engine.
+
+See the [compatibility and verification status](docs/compatibility.md) before deployment. Validate the exact Windows, SQL Server, Dynamics GP, GP client, and native-message schema combination before enabling enforcement for business users.
+
+## Releases and changelog
+
+- **Current version:** Dynamics GP UserOps 4.0.0
+- **Installers and checksums:** [GitHub Releases](https://github.com/juanrovalle/dynamics-gp-users-manager/releases)
+- **Version history:** [CHANGELOG.md](CHANGELOG.md)
+- **Detailed 4.0.0 notes:** [Release notes](docs/release-notes.md)
+- **Commercial delivery scope:** [Commercialization](docs/commercialization.md)
+
+Release packages should contain `Setup.exe`, `Setup.exe.sha256`, release notes, and a clear signed/unsigned status. A commercial build should be Authenticode-signed before distribution.
 
 ## Build from source
 
-Developer prerequisites are Windows, the .NET 10 SDK from `global.json`, NuGet access, and Inno Setup 7. Customer machines do not need these tools.
+Developer prerequisites are Windows, the .NET 10 SDK selected by `global.json`, NuGet access, and Inno Setup 7.
 
 ```powershell
 dotnet run --project tests/DynamicsGP.UserOps.Tests
 .\build.ps1 -InnoCompiler 'C:\Program Files\Inno Setup 7\ISCC.exe'
 ```
 
-The package is written to `artifacts/installer/Setup.exe`. Provide `-CertificateThumbprint` and `-RequireSignature` for a signed commercial build. No private certificate is included in the repository, and an unsigned development package must not be represented as signed.
-
-For a read-only demonstration:
+The installer is written to `artifacts/installer/Setup.exe`. To regenerate the README demo and gallery from an approved screenshot set:
 
 ```powershell
-.\DynamicsGPUserOps.exe --demo
+.\packaging\Generate-ReadmeMedia.ps1 -SourceDirectory 'C:\path\to\Screenshots\100'
 ```
 
-The legacy PowerShell/SQLCMD installer under `src/Install` remains available for DBA-controlled maintenance. It is not the customer installation path.
+See [automated tests](tests/README.md) for the SQL integration, platform-policy, migration, and screenshot workflows.
 
-## Verification
+## Support the project
 
-See [automated tests](tests/README.md), [compatibility status](docs/compatibility.md), and [release notes](docs/release-notes.md). Local build, static analysis, SQL parsing, and screenshot rendering are not substitutes for acceptance on a real SQL Server and Dynamics GP installation. Record the exact Windows, SQL, GP, and client builds actually tested.
+If Dynamics GP UserOps saves your team time or gives you a useful foundation for Dynamics GP operations:
 
-## Commercial distribution and license
+**⭐ Star this repo if it helps you.**
 
-The intended offer is a purchase per managed SQL instance, implementation services, and optional annual maintenance. The purchased version continues working without renewal. Commercial terms do not replace or restrict the existing [MIT license](LICENSE). Third-party components retain their own licenses. See [commercial delivery scope](docs/commercialization.md).
+Contributions and reproducible issue reports are welcome. Include product version, Windows build, SQL Server version, Dynamics GP build, and sanitized diagnostic output.
+
+## License and product notice
+
+This repository is licensed under the [MIT License](LICENSE). Commercial implementation and support services do not replace or restrict that license. Third-party components retain their own licenses.
 
 Microsoft Dynamics GP is a trademark or product of Microsoft. Dynamics GP UserOps is an independent product and is not affiliated with, endorsed by, sponsored by, or supported by Microsoft.
